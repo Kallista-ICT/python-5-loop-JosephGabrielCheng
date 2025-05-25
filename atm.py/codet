@@ -1,0 +1,12 @@
+balanced = 500
+
+while balanced > 0:
+    
+    print(f"Your balance is ${balanced}")
+    withdraw = int(input("Howmuch you want to withdraw? "))
+    print(f"You have successfully withdrawed ${withdraw} and your balance is now ${balanced - withdraw}")
+    balanced -= withdraw
+   
+    if balanced == 0:
+        print("Sorry your balance is now $0")
+

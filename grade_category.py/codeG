@@ -1,0 +1,21 @@
+number = int(input("Enter number of students"))
+
+scores = []
+for i in range(number):
+    print(f"Enter student {i +1} score {i+1}")
+    score = int(input("enter: "))
+    scores.append(score)
+
+
+# Display results
+print("\nStudent Scores and Categories:")
+for score in scores:
+    if score >= 90:
+        grade = "Excellent"
+    elif score >= 70:
+        grade = "Good"
+    elif score >= 50:
+        grade = "Average"
+    else:
+        grade = "Poor"
+    print(f"{score} -> {grade}")
