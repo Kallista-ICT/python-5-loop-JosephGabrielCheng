@@ -1,0 +1,128 @@
+
+import random
+from collections import Counter
+
+CATEGORIES = [
+    "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
+    "Three of a Kind", "Four of a Kind", "Full House",
+    "Small Straight", "Large Straight", "Yahtzee", "Chance"
+]
+
+def roll_dice(keep=None):
+    if keep is None:
+        keep = []
+    return keep + [random.randint(1, 6) for _ in range(5 - len(keep))]
+
+def score_roll(dice, category):
+    counts = Counter(dice)
+    if category == "Ones":
+        return dice.count(1) * 1
+    if category == "Twos":
+        return dice.count(2) * 2
+    if category == "Threes":
+        return dice.count(3) * 3
+    if category == "Fours":
+        return dice.count(4) * 4
+    if category == "Fives":
+        return dice.count(5) * 5
+    if category == "Sixes":
+        return dice.count(6) * 6
+    if category == "Three of a Kind":
+        return sum(dice) if any(v >= 3 for v in counts.values()) else 0
+    if category == "Four of a Kind":
+        return sum(dice) if any(v >= 4 for v in counts.values()) else 0
+    if category == "Full House":
+        return 25 if sorted(counts.values()) == [2, 3] else 0
+    if category == "Small Straight":
+        straights = [{1,2,3,4},{2,3,4,5},{3,4,5,6}]
+        return 30 if any(straight <= set(dice) for straight in straights) else 0
+    if category == "Large Straight":
+        return 40 if set(dice) in [set([1,2,3,4,5]), set([2,3,4,5,6])] else 0
+    if category == "Yahtzee":
+        return 50 if len(counts) == 1 else 0
+    if category == "Chance":
+        return sum(dice)
+    return 0
+
+def best_category(dice, available_categories):
+    best = None
+    best_score = -1
+    for cat in available_categories:
+        s = score_roll(dice, cat)
+        if s > best_score:
+            best_score = s
+            best = cat
+    return best, best_score
+
+def ai_choose_dice(dice, rolls_left, available_categories):
+    # Simple AI: keep dice that help the best scoring category
+    best_cat, _ = best_category(dice, available_categories)
+    if best_cat in ["Yahtzee", "Four of a Kind", "Three of a Kind"]:
+        most_common = Counter(dice).most_common(1)[0][0]
+        keep = [d for d in dice if d == most_common]
+    elif best_cat in ["Full House"]:
+        counts = Counter(dice)
+        keep = []
+        for num, cnt in counts.items():
+            if cnt >= 2:
+                keep += [num]*cnt
+    elif best_cat in ["Small Straight", "Large Straight"]:
+        # Try to keep unique numbers in a sequence
+        keep = sorted(set(dice))
+    else:
+        # For upper section, keep matching numbers
+        target = int(best_cat[0]) if best_cat[0].isdigit() else None
+        keep = [d for d in dice if d == target] if target else []
+    return keep
+
+def play_turn(player, available_categories):
+    dice = roll_dice()
+    for _ in range(2):  # 2 rerolls allowed
+        print(f"{player} rolled: {dice}")
+        if player == "You":
+            keep_input = input("Enter dice to keep (e.g. 1 1 5): ")
+            keep = list(map(int, keep_input.strip().split())) if keep_input else []
+        else:
+            keep = ai_choose_dice(dice, 2, available_categories)
+            print(f"AI keeps: {keep}")
+        dice = roll_dice(keep)
+    print(f"{player} final roll: {dice}")
+    if player == "You":
+        print("Available categories:")
+        for i, cat in enumerate(available_categories):
+            print(f"{i+1}. {cat} (score: {score_roll(dice, cat)})")
+        cat_idx = int(input("Choose category number: ")) - 1
+        cat = available_categories[cat_idx]
+    else:
+        cat, _ = best_category(dice, available_categories)
+        print(f"AI chooses category: {cat}")
+    score = score_roll(dice, cat)
+    print(f"{player} scores {score} in {cat}\n")
+    return cat, score
+
+def play_game():
+    user_score = {}
+    ai_score = {}
+    user_cats = CATEGORIES[:]
+    ai_cats = CATEGORIES[:]
+    for _ in range(len(CATEGORIES)):
+        print("Your turn:")
+        cat, score = play_turn("You", user_cats)
+        user_score[cat] = score
+        user_cats.remove(cat)
+        print("AI's turn:")
+        cat, score = play_turn("AI", ai_cats)
+        ai_score[cat] = score
+        ai_cats.remove(cat)
+    print("Final Scores:")
+    print(f"You: {sum(user_score.values())}")
+    print(f"AI: {sum(ai_score.values())}")
+    if sum(user_score.values()) > sum(ai_score.values()):
+        print("You win!")
+    elif sum(user_score.values()) < sum(ai_score.values()):
+        print("AI wins!")
+    else:
+        print("It's a tie!")
+
+if __name__ == "__main__":
+    play_game()
